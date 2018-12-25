@@ -1,0 +1,177 @@
+<html>
+<head>
+  <title>Speak good or remain silent </title><!--//1:30:00-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link href="/css/bootstrap.css" rel="stylesheet">
+  <link href="/css/custom.css" rel="stylesheet">
+  <link rel="icon" href="/images/chat_logo.png" type="image/x-icon"/>
+</head>
+
+<body>
+<!--Shoing the nickname container upon login on the lendign page-->
+  <div class="container">
+    <div class="row">
+     <div class="" align="center" id="nickWrap">
+       <img height="500" width="500" class="img-circle" src="/images/minion.jpg"/>
+         <h3>Pick your super awesome nickname</h3>
+       <p id="nickError"></p>
+       <div class="form-group">
+       <form id="setNick" role="form"><!-- "setNick" form accept a nickname from user, go to jQuery below declar var to setNick -->
+         <input  type="text" autofocus required placeholder="Your nickname" id="nickname"/>
+         <input class="btn btn-danger" type="submit" value="Submit"/>
+         <!--On Submit call a function to handle send data over the socket to handle the backend -->
+       </form>
+     </div>
+    </div>
+   </div>
+ </div>
+
+<!--Hiding the entire container for the chat window -->
+<div id="chatWindow">
+ <div class="container">
+ 		<div class="row">
+ 			<div class="col-md-6 col-sm-offset-1 panel panel-primary">
+            <div class="panel-body">
+               <div id="contentWrap" >
+                  <div id="chatWrap" style=" border-radius: 10px;
+                      background: #F0E0B0;background: url(/images/wood.jpg);min-height: 400;max-height: 400;overflow-y: scroll;">
+                      <div id="chat"></div>
+                  </div>
+               </div>
+            </div>
+        </div>
+   <br/>
+      <div class="col-md-4 col-sm-offset-1 panel panel-default">
+        <div class="panel-heading">Currently Online</div>
+         <div class="panel-body">
+            <div  id="users"></div>
+        </div>
+      </div>
+        <h4 align="center">Invite your friends by sharing the <a target="_blank" href="https://awesome-socket-io.herokuapp.com/">link</a></h4>
+   </div>
+ </div>
+ <br/>
+
+ <div class="row">
+  <div class="col-md-3 col-md-offset-2">
+    <form id="message-box">
+      <div class="form-group">
+       <textarea required autofocus style="background-color:#ffffe6;border:double 4px orange;border-radius: 0.5em;" rows="3" cols="60" id="message" placeholder="Write your message and press enter.."></textarea>
+      </div>
+   </form>
+ </div>
+ </div>
+
+ <div class="row">
+  <h1 align="center"><code>@harry  ciao</code> to say ciao to harry privately</h1>
+ </div>
+
+</div>
+
+   <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+   <script src="/socket.io/socket.io.js"></script><!--Importing socket io libaray from serer rather than using CDN-->
+   <script src="/js/bootstrap.js"></script>
+
+   <script>
+    jQuery(function($){
+       var socket=io.connect();//creats global ojb .io and do connect operation on top of it. 
+       //upon connect from the front-end, we go to app.js and it triggers io.sockets.on('connection',/  line 39 and 
+       //further communication of events happens in app.js file, so it all starts from front end, creats connection event, 
+       // sends it over the socket to server, where on connection other evetns and callback function gets execuated 
+       var $messageForm=$('#message-box');
+       var $messageBox=$('#message');
+       var $chat=$('#chat');
+
+       var chatOuter=$('#chatWrap');
+       var chatInner=$('#chat');
+
+       var $users=$('#users');
+       var $nickForm=$('#setNick');//setting form name value 
+       var $nickError=$('#nickError');
+       var $nickBox=$('#nickname');//user input name as nickBox, got the value now what we do as below
+       var title='anonymous';
+
+       $('#message').keydown(function(event) {
+          if (event.keyCode == 13) {
+               $(this.form).submit()
+              return false;
+             }
+       });
+
+
+       $nickForm.submit(function(e){//on user submit via form, below will get executed, we have our nickForm componnent, we have gotten it through jQuery, 
+        //we will submit a function callback into my submit action, so this callback funciton will be called when I do submit action on top of nickForm,
+        //first thing it will do is in our call back funciton hear, prevent the default action whcih is nothing but a post action, you will post your data on top of an
+        //an API which is exposed usually, this is what we have been doing it till now, but since we are not useing express apart from showing the landing page,
+        //we are going to prevetn the default action, we are not going hit any API rarther we are going to send data on top of socket,   
+           e.preventDefault();
+           title=$nickBox.val();//will fetch value from nickBox (nickname) as our title, finally setting up on window title if its available 
+           socket.emit('new user',$nickBox.val(),function(data){//this is where new suer emit will happend from front end along with data which is 
+          //nothing but as payload [$nickBox.val() = nickname], and this is where reply comesback, I am registering another call back funciton on top of .emit
+          //emiting an event, I am sending some data, it will reach over to the socket to my backend, and my backend replya back with some data 
+          //this is wher call back function gets called whenever there is replay from the backend. 
+                if(data){ //data is nothing but my replay from backend, backend will just say if its true or false 
+                  //if nickname is avaialbe than its true else send sorry msg. 
+                  $('#nickWrap').hide(); //div(#nickWrap) elemet name, uiser input form to be hidden  
+                    document.title=title; //title name = nickname
+                  $('#chatWindow').show(); //showing chat window
+                }else{// if its false from backend, then show below msg. 
+                  $nickError.html("Sorry, that nickname is already taken , try something else");
+                }
+           });
+           $nickBox.val('');//finally in neither case, we will set our input box as empty
+       });
+
+       socket.on('usernames',function(data){
+            var html='<ul>';
+            for(i=0;i<data.length;i++){
+              html+='<li><span>'+data[i]+'</span></li>';
+            }
+            html=html+'</ul>';
+            $users.html(html);
+        });
+
+
+
+       $messageForm.submit(function(e){
+            e.preventDefault();
+            socket.emit('send message',$messageBox.val(),function(data){
+              $chat.append("<p align='right' class='error'>"+data+"&nbsp;&nbsp;</p><br/>");
+            });
+            $messageBox.val('');
+       });
+
+
+
+       socket.on('new message',function(data){
+         if(data.nick===title){
+           $chat.append("<p style='' align='right' class='msg'><b>"+data.nick+" : </b>"+data.msg+"&nbsp;&nbsp;</p>");
+         }else{
+           $chat.append("<p style='' align='left' class='msg'><b>&nbsp;&nbsp;&nbsp;"+data.nick+" : </b>"+data.msg+"</p>");
+         }
+         scrollCorrect();
+       });
+
+
+
+       socket.on('whisper',function(data){
+           $chat.append("<p align='left' class='whisper'><b>&nbsp;&nbsp;&nbsp;"+data.nick+" : </b>"+data.msg+"</p><br/>");
+
+       });
+
+       socket.on('private',function(data){
+           $chat.append("<p align='right' class='whisper'><b>"+title+"@"+data.nick+": </b>"+data.msg+"&nbsp;&nbsp;</p><br/>");
+
+       });
+
+
+        function scrollCorrect(){
+             chatOuter.scrollTop(chatInner.outerHeight());
+        }
+    });
+
+   </script>
+
+</body>
+</html>

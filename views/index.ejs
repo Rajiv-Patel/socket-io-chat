@@ -28,7 +28,7 @@
  </div>
 
 <!--Hiding the entire container for the chat window -->
-<div id="chatWindow">
+<div id="chatWindow"><!--1:43:00-->
  <div class="container">
  		<div class="row">
  			<div class="col-md-6 col-sm-offset-1 panel panel-primary">
@@ -45,7 +45,7 @@
       <div class="col-md-4 col-sm-offset-1 panel panel-default">
         <div class="panel-heading">Currently Online</div>
          <div class="panel-body">
-            <div  id="users"></div>
+            <div  id="users"></div><!--Who is the user -->
         </div>
       </div>
         <h4 align="center">Invite your friends by sharing the <a target="_blank" href="https://awesome-socket-io.herokuapp.com/">link</a></h4>
@@ -79,26 +79,28 @@
        //upon connect from the front-end, we go to app.js and it triggers io.sockets.on('connection',/  line 39 and 
        //further communication of events happens in app.js file, so it all starts from front end, creats connection event, 
        // sends it over the socket to server, where on connection other evetns and callback function gets execuated 
-       var $messageForm=$('#message-box');
-       var $messageBox=$('#message');
-       var $chat=$('#chat');
+       var $messageForm=$('#message-box');//what msg I am sending 
+       var $messageBox=$('#message');//msg itself typed in the box
+       var $chat=$('#chat');//above empty chat dive with wood background image html
 
-       var chatOuter=$('#chatWrap');
-       var chatInner=$('#chat');
+       var chatOuter=$('#chatWrap');//chat wrapper box 
+       var chatInner=$('#chat');//chat text itself 
 
-       var $users=$('#users');
+       var $users=$('#users');//nicknames 
        var $nickForm=$('#setNick');//setting form name value 
        var $nickError=$('#nickError');
        var $nickBox=$('#nickname');//user input name as nickBox, got the value now what we do as below
-       var title='anonymous';
+       var title='anonymous';//by default title is anonymous, till user types its name 
 
+       //pressing enter when sendign msg,  //2:01:00
        $('#message').keydown(function(event) {
-          if (event.keyCode == 13) {
-               $(this.form).submit()
+          if (event.keyCode == 13) {//13 represents enter which msg gets posted 
+               $(this.form).submit()//trigring submit when key 13 is clicked 
+               //in a form we dont have sumbit button rather keydown 13 we will generate submit myself 
+               //continue below $messageForm.submit()
               return false;
              }
        });
-
 
        $nickForm.submit(function(e){//on user submit via form, below will get executed, we have our nickForm componnent, we have gotten it through jQuery, 
         //we will submit a function callback into my submit action, so this callback funciton will be called when I do submit action on top of nickForm,
@@ -123,25 +125,25 @@
            $nickBox.val('');//finally in neither case, we will set our input box as empty
        });
 
-       socket.on('usernames',function(data){
+       //adding list of users in Currently Online Window 
+       socket.on('usernames',function(data){//data is nothing but payload (users in the backend)
             var html='<ul>';
-            for(i=0;i<data.length;i++){
+            for(i=0;i<data.length;i++){//using forloop to add user in the list
               html+='<li><span>'+data[i]+'</span></li>';
             }
             html=html+'</ul>';
             $users.html(html);
         });
 
-
-
-       $messageForm.submit(function(e){
-            e.preventDefault();
+        //2:00:00
+       $messageForm.submit(function(e){ //msgform has submit event listener, this is how we register my func callback.
+        //which listens on submit event,  
+            e.preventDefault();//prevent default post action, not hitting any routes when post data, rather submit my own data over socket 
             socket.emit('send message',$messageBox.val(),function(data){
               $chat.append("<p align='right' class='error'>"+data+"&nbsp;&nbsp;</p><br/>");
             });
             $messageBox.val('');
        });
-
 
 
        socket.on('new message',function(data){
